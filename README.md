@@ -1,0 +1,1 @@
+Wrapper Link analytics adresów [cuttly](https://cutt.ly/) na podstawie [dokumentacji](https://cutt.ly/api-documentation/regular-api)
