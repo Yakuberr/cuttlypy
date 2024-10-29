@@ -218,26 +218,24 @@ class GeneralLinkStats:
         return self.raw['stats']['rest']
 
 
-def get_link_analytics(session:httpx.Client, api_key:str, cuttly_url: str, general=False, retry: bool | None = None):
+def get_link_analytics(session:httpx.Client, api_key:str, cuttly_url: str, general=False, sleep=False):
     res = session.get(f'http://cutt.ly/api/api.php?key={api_key}&stats={cuttly_url}',
                     follow_redirects=True)  # Bez opcji follow_redirects odpowiedź zwraca kod przekierowania bez zwracania danych
-    if res.status_code != 200:
-        if retry:
-            time.sleep(16)
-            return get_link_analytics(session, api_key, cuttly_url, general, retry)
-        raise Exception(f'Nie otrzymano danych używając adresu {cuttly_url}')
+    if res.headers['x-ratelimit-remaining'] == '0' and sleep:
+        time.sleep(60)
+        return get_link_analytics(session=session, api_key=api_key, cuttly_url=cuttly_url, general=general, sleep=sleep)
+    res.raise_for_status()
     if general:
         return GeneralLinkStats(res.json())
     return LinkStats(res.json())
 
-async def async_get_link_analytics(session:httpx.AsyncClient, api_key:str, cuttly_url: str, general=False, retry: bool | None = None):
+async def async_get_link_analytics(session:httpx.AsyncClient, api_key:str, cuttly_url: str, general=False, sleep=False):
     res = await session.get(f'http://cutt.ly/api/api.php?key={api_key}&stats={cuttly_url}',
                     follow_redirects=True)  # Bez opcji follow_redirects odpowiedź zwraca kod przekierowania bez zwracania danych
-    if res.status_code != 200:
-        if retry:
-            time.sleep(16)
-            return async_get_link_analytics(session, api_key, cuttly_url, general, retry)
-        raise Exception(f'Nie otrzymano danych używając adresu {cuttly_url}')
+    if res.headers['x-ratelimit-remaining'] == '0' and sleep:
+        time.sleep(60)
+        return await async_get_link_analytics(session=session, api_key=api_key, cuttly_url=cuttly_url, general=general, sleep=sleep)
+    res.raise_for_status()
     if general:
         return GeneralLinkStats(res.json())
     return LinkStats(res.json())
